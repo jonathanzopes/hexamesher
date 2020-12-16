@@ -16,9 +16,7 @@ def sphere(shape, radius, position):
         arr += (x_i/semisize)**2
         
     arr = (arr<=1.0).astype('int8')
-    
-    #arr = np.array(arr).astype('int8')    
-    
+        
     return arr
     
 if __name__ == '__main__':
