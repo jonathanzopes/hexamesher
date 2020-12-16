@@ -1,6 +1,8 @@
 import numpy as np
 import nibabel as nib
 
+from hexamesher import *
+
 def sphere(shape, radius, position):
     # Implementation from https://stackoverflow.com/questions/46626267
     semisizes = (radius, ) * 3
