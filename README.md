@@ -1,4 +1,4 @@
 # hexamesher
 Simple meshing tool using 8-node hexahedral elements.
 
-![plot](https://github.com/jonathanzopes/hexamesher/blob/main/assets/Sphere.png){:height="50%" width="50%"}
+<img src="https://github.com/jonathanzopes/hexamesher/blob/main/assets/Sphere.png" width="500" height="457">
