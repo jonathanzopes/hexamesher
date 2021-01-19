@@ -35,47 +35,52 @@ class hexamesher():
 		self.dvec        = [[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0], [0, 0, 1], [1, 0, 1], [1, 1, 1], [0, 1, 1]]
 		
 		self.zoom        = zoom
-
 	
 	def mesh(self):
-		
-		if not self.zoom == 1:
-			self.binmap = zoom(self.binmap, self.zoom, order=0)
+		# Initialize all container elements for vtk.
+		output = vtk.vtkUnstructuredGrid()
+		points = vtk.vtkPoints()
+		length = vtk.vtkDoubleArray()
+		length.SetName('NodeLength')
+		# Find all locations that need a mesh element.
+		xs, ys, zs = self.binmap.nonzero()
 
-		# Generate 8-noded hexahedral mesh.
-		output = vtk.vtkUnstructuredGrid()		
-		x_temp, y_temp, z_temp = self.binmap.nonzero()
+		N = xs.shape[0]
 
-		x = x_temp*self.scale[0] + self.offset[0]
-		y = y_temp*self.scale[1] + self.offset[1]
-		z = z_temp*self.scale[2] + self.offset[2]
-
-		N = x.shape[0]
-		
-		I = 0 
-		points = vtk.vtkPoints()		
-
-		NodeLength = vtk.vtkDoubleArray()
-		NodeLength.SetName('NodeLength')
-		
-		# Generate points and hexahedral elements.
-		for i in range(0, N):
+		pos_id_dict = {}
+		# Generate all required points and stored their pos_id in hashmap.
+		for i in range(N):
 			for k in range(len(self.dvec)):
-				points.InsertNextPoint(x[i]+self.dvec[k][0]/1, y[i]+self.dvec[k][1]/1, z[i]+self.dvec[k][2]/1)
+				xi = xs[i]+self.dvec[k][0]
+				yi = ys[i]+self.dvec[k][1]
+				zi = zs[i]+self.dvec[k][2]
 
-			hex_ = vtk.vtkHexahedron()	
-			
-			for j in range(0, len(self.dvec)):
-				hex_.GetPointIds().SetId(j, 8*I+j)
-			
-			NodeLength.InsertNextValue(1.0)
+				if not (xi, yi, zi) in pos_id_dict:
+					points.InsertNextPoint(xi, yi, zi)
+					pos_id_dict[(xi, yi, zi)] = len(pos_id_dict)
+
+		# Add all hexahedrons into the unstructured grid, by using points.
+		num_ids = len(pos_id_dict)
+		print(num_ids)
+		for i in range(N):
+			hex_ = vtk.vtkHexahedron()
+			for j in range(len(self.dvec)):
+				# Retrieve the correct id for the point.
+				xi = xs[i]+self.dvec[j][0]
+				yi = ys[i]+self.dvec[j][1]
+				zi = zs[i]+self.dvec[j][2]
+				curr_id = pos_id_dict[(xi, yi, zi)]
+				# Set the id into the hexahedral element.
+				hex_.GetPointIds().SetId(j, curr_id)
+		
+			length.InsertNextValue(1.0)
 			output.InsertNextCell(hex_.GetCellType(), hex_.GetPointIds())
-			I = I+1
-		
+
+		# Write final output containers.
 		output.SetPoints(points)
-		output.Scalars = NodeLength
-		
-		# Write output to file.
+		output.Scalars = length
+
+		# Write output.
 		writer = vtk.vtkXMLUnstructuredGridWriter()
 		writer.SetFileName(self.output_path)
 		writer.SetInputData(output)
